@@ -13,7 +13,7 @@
 		<name>Genome Damage and Stability Centre</name>
 		<url>http://www.sussex.ac.uk/gdsc/</url>
 	</organization>
-	<description>Test project for evaluation of caching in Apache Comons RNG PoissonSampler</description>
+	<description>Test project for evaluation of caching in Apache Commons RNG PoissonSampler</description>
 
 	<licenses>
 		<license>
