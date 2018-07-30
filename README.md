@@ -1,13 +1,13 @@
 Poisson Sampler Test Code
 ==========================
 
-Test project for evaluation of caching in [https://commons.apache.org/proper/commons-rng/](Apache Commons RNG) PoissonSampler.
+Test project for evaluation of caching in [Apache Commons RNG](https://commons.apache.org/proper/commons-rng/) PoissonSampler.
 
 
 Legal
 -----
 
-See [LICENSE.txt](LICENSE)
+See [LICENSE](LICENSE.txt)
 
 
 # About #
