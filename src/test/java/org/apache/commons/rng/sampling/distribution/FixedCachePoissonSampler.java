@@ -1,7 +1,6 @@
 package org.apache.commons.rng.sampling.distribution;
 import org.apache.commons.rng.UniformRandomProvider;
 import org.apache.commons.rng.sampling.distribution.AhrensDieterExponentialSampler;
-import org.apache.commons.rng.sampling.distribution.BoxMullerGaussianSampler;
 import org.apache.commons.rng.sampling.distribution.ContinuousSampler;
 import org.apache.commons.rng.sampling.distribution.DiscreteSampler;
 import org.apache.commons.rng.sampling.distribution.SamplerBase;
@@ -30,9 +29,6 @@ implements DiscreteSampler,ResettingPoissonSampler {
         factorialLog = FactorialLog.create().withCache((int) (2 * PIVOT));
     }
     
-    /** Keep a copy of the RNG so the Gaussian sampler can be reset. */
-    private UniformRandomProvider rngCopy;
-
     /**
      * @param rng Generator of uniformly distributed random numbers.
      * @param mean Mean.
@@ -47,7 +43,6 @@ implements DiscreteSampler,ResettingPoissonSampler {
 
         this.mean = mean;
 
-        this.rngCopy = rng;
         gaussian = new ResettingBoxMullerGaussianSampler(rng, 0, 1);
         exponential = new AhrensDieterExponentialSampler(rng, 1);
     }

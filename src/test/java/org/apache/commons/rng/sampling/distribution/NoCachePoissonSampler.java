@@ -152,11 +152,11 @@ public class NoCachePoissonSampler extends SamplerBase implements DiscreteSample
 		    if (u > p1 + p2) {
 			y = lambda;
 			break;
-		    } else {
+		    } //else {
 			x = delta + (twolpd / delta) * exponential.sample();
 			y = Math.ceil(x);
 			v = -exponential.sample() - delta * (x + 1) / twolpd;
-		    }
+		    //}
 		}
 		a = x < 0 ? 1 : 0;
 		t = y * (y + 1) / (2 * lambda);
