@@ -1,4 +1,5 @@
 package org.apache.commons.rng.sampling.distribution;
+
 import org.apache.commons.rng.UniformRandomProvider;
 import org.apache.commons.rng.sampling.distribution.InternalUtils.FactorialLog;
 
@@ -6,9 +7,7 @@ import org.apache.commons.rng.sampling.distribution.InternalUtils.FactorialLog;
  * This is a copy of the {@link PoissonSampler} modified so that the function
  * calls to compute {@code log(n!)} can be recorded.
  */
-public class RecordingPoissonSampler
-extends SamplerBase
-implements DiscreteSampler {
+public class RecordingPoissonSampler extends SamplerBase implements DiscreteSampler {
     /** Value for switching sampling algorithm. */
     static final double PIVOT = 40;
     /** Mean of the distribution. */
@@ -19,9 +18,9 @@ implements DiscreteSampler {
     private final ContinuousSampler gaussian;
     /** {@code log(n!)}. */
     private final FactorialLog factorialLog;
-    /** Histogram to record calls to {@code log(n!)}. */ 
+    /** Histogram to record calls to {@code log(n!)}. */
     private final IntegerHistogram histogram;
-    
+
     /**
      * Instantiates a new recording poisson sampler.
      *
@@ -30,8 +29,7 @@ implements DiscreteSampler {
      * @param histogram the histogram
      * @throws IllegalArgumentException if {@code mean <= 0}.
      */
-    public RecordingPoissonSampler(UniformRandomProvider rng,
-                          double mean, IntegerHistogram histogram) {
+    public RecordingPoissonSampler(UniformRandomProvider rng, double mean, IntegerHistogram histogram) {
         super(rng);
         if (mean <= 0) {
             throw new IllegalArgumentException(mean + " <= " + 0);
@@ -41,10 +39,9 @@ implements DiscreteSampler {
 
         gaussian = new BoxMullerGaussianSampler(rng, 0, 1);
         exponential = new AhrensDieterExponentialSampler(rng, 1);
-        factorialLog = mean < PIVOT ?
-            null : // Not used.
-            FactorialLog.create().withCache((int) Math.min(mean, 2 * PIVOT));
-        
+        factorialLog = mean < PIVOT ? null : // Not used.
+                FactorialLog.create().withCache((int) Math.min(mean, 2 * PIVOT));
+
         this.histogram = histogram;
     }
 
@@ -82,10 +79,10 @@ implements DiscreteSampler {
             final double lambda = Math.floor(meanPoisson);
             final double lambdaFractional = meanPoisson - lambda;
             final double logLambda = Math.log(lambda);
-            
+
             // Do not record this as it is constant and could be precomputed
             final double logLambdaFactorial = factorialLog((int) lambda);
-            
+
             final long y2 = lambdaFractional < Double.MIN_VALUE ? 0 : nextPoisson(lambdaFractional);
             final double delta = Math.sqrt(lambda * Math.log(32 * lambda / Math.PI + 1));
             final double halfDelta = delta / 2;
@@ -168,7 +165,7 @@ implements DiscreteSampler {
      * @throws IllegalArgumentException if {@code n < 0}.
      */
     private double recordFactorialLog(int n) {
-    	histogram.add(n);
+        histogram.add(n);
         return factorialLog.value(n);
     }
 }
