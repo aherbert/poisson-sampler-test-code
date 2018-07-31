@@ -74,7 +74,7 @@ public static class Sources {
     private RestorableUniformRandomProvider generator;
 
     /**
-     * The state of the generator at the start of the test (for reproducibility).
+     * The state of the generator at the start of the test (for reproducible results).
      */
     private RandomProviderState state;
 
