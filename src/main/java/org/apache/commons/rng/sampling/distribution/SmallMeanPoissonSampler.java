@@ -30,7 +30,7 @@ public class SmallMeanPoissonSampler
     final int limit;
 
     /**
-     * @param rng Generator of uniformly distributed random numbers.
+     * @param rng  Generator of uniformly distributed random numbers.
      * @param mean Mean.
      * @throws IllegalArgumentException if {@code mean <= 0}.
      */

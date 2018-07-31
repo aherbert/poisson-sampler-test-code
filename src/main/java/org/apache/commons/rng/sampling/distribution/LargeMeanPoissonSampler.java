@@ -57,7 +57,7 @@ public class LargeMeanPoissonSampler
     private final DiscreteSampler smallMeanPoissonSampler;
 
     /**
-     * @param rng Generator of uniformly distributed random numbers.
+     * @param rng  Generator of uniformly distributed random numbers.
      * @param mean Mean.
      * @throws IllegalArgumentException if {@code mean <= 0}.
      */
