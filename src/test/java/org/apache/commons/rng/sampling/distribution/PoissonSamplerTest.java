@@ -7,9 +7,7 @@ import org.apache.commons.rng.simple.RandomSource;
 import org.junit.Assert;
 import org.junit.Test;
 
-import gnu.trove.list.array.TIntArrayList;
-
-//@formatter:off
+import gnu.trove.list.array.TDoubleArrayList;
 
 /**
  * This test check the speed of constructing a PoissonSampler inside a loop
@@ -37,7 +35,8 @@ public class PoissonSamplerTest {
         int[] data2 = new int[LOOPS];
         int[] data3 = new int[LOOPS];
 
-        for (int mean = 40; mean <= 80; mean += 5) {
+        for (int n = 10; n <= 80; n += 5) {
+            final double mean = n + 0.3;
             // Time the default sampler constructed inside a loop
             rng.restoreState(state);
 
@@ -66,10 +65,10 @@ public class PoissonSamplerTest {
             long fastLoopTime = System.nanoTime() - start;
 
             System.out.printf(
-                    "Mean %d  Single construction (%8d) vs Loop construction                          (%8d)   (%f.2x faster)\n",
+                    "Mean %5.1f  Single construction (%8d) vs Loop construction                          (%8d)   (%f.2x faster)\n",
                     mean, singleTime, loopTime, (double) loopTime / singleTime);
             System.out.printf(
-                    "Mean %d  Single construction (%8d) vs Loop construction with static FactorialLog (%8d)   (%f.2x faster)\n",
+                    "Mean %5.1f  Single construction (%8d) vs Loop construction with static FactorialLog (%8d)   (%f.2x faster)\n",
                     mean, singleTime, fastLoopTime, (double) fastLoopTime / singleTime);
             Assert.assertArrayEquals("Random samples are not the same", data1, data2);
             Assert.assertArrayEquals("Random samples are not the same", data1, data3);
@@ -159,17 +158,20 @@ public class PoissonSamplerTest {
         int N_CALLS = 100000;
 
         // Get the means for testing
-        TIntArrayList list = new TIntArrayList();
+        TDoubleArrayList list = new TDoubleArrayList();
         for (int mean = 40; mean <= max; mean += 5)
-            list.add(mean);
+            list.add(mean + 0.3);
         for (int i = 0; i < 10; i++) {
             max *= 2;
-            list.add(max);
+            list.add(max + 0.3);
         }
 
         IntegerHistogram h = new IntegerHistogram(4096);
 
-        for (int mean : list.toArray()) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("||Mean||Samples||log(n!) calls||Calls/sample||min n||max n||Av n||SD n||Poisson SD||\n");
+
+        for (double mean : list.toArray()) {
             h.clear();
             int samples = 0;
             RecordingPoissonSampler ps = new RecordingPoissonSampler(rng, mean, h);
@@ -183,11 +185,34 @@ public class PoissonSamplerTest {
 
             // Report
             double[] stats = h.getStatistics();
+            double callPerSample = (double) h.getCount() / samples;
+            int minN = (int) stats[0];
+            int maxN = (int) stats[1];
+            double av = stats[2];
+            double sd = stats[3];
+            double poissonSD = Math.sqrt(mean);
             System.out.printf(
-                    "Mean %6d  Samples=%7d  log(n!)=%6d   (%8.3g / sample)  min=%6d  max=%6d  mean=%10.3f  SD=%7.3f   Poisson SD=%7.3f\n",
-                    mean, samples, h.getCount(), (double) h.getCount() / samples, (int) stats[0], (int) stats[1],
-                    stats[2], stats[3], Math.sqrt(mean));
+                    "Mean %5.1f  Samples=%7d  log(n!)=%6d   (%8.3g / sample)  min=%6d  max=%6d  mean=%10.3f  SD=%7.3f   Poisson SD=%7.3f\n",
+                    mean, samples, h.getCount(), callPerSample, minN, maxN, av, sd, poissonSD);
+            sb.append('|').append(round1DP(mean));
+            sb.append('|').append(samples);
+            sb.append('|').append(h.getCount());
+            sb.append('|').append(String.format("%8.3g", callPerSample));
+            sb.append('|').append(minN);
+            sb.append('|').append(maxN);
+            sb.append('|').append(round1DP(av));
+            sb.append('|').append(round1DP(sd));
+            sb.append('|').append(round1DP(poissonSD));
+            sb.append("|\n");
         }
+
+        System.out.println("---");
+        System.out.print(sb.toString());
+        System.out.println("---");
+    }
+
+    private static String round1DP(double d) {
+        return String.format("%.1f", d);
     }
 
     /**
@@ -213,7 +238,12 @@ public class PoissonSamplerTest {
         int[] data3 = new int[LOOPS];
         int[] data4 = new int[LOOPS];
 
-        for (int mean = 10; mean <= 80; mean += 5) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(
+                "||Mean||Samples||PoissonSampler||PoissonSampler single-use||Relative||NoCachePoissonSampler||Relative||NoCachePoissonSampler single-use||Relative||\n");
+
+        for (int n = 10; n <= 80; n += 5) {
+            final double mean = n + 0.3;
             // Time the default sampler constructed inside a loop
             rng.restoreState(state);
 
@@ -237,32 +267,51 @@ public class PoissonSamplerTest {
 
             start = System.nanoTime();
             for (int i = 0; i < LOOPS; i++)
-                data3[i] = new NoCachePoissonSampler(rng, mean).sample();
+                data3[i] = new WrapperPoissonSampler(rng, mean).sample();
             long loopTime2 = System.nanoTime() - start;
 
             // Time the no cache sampler constructed outside a loop
             rng.restoreState(state);
 
             start = System.nanoTime();
-            NoCachePoissonSampler ps2 = new NoCachePoissonSampler(rng, mean);
+            WrapperPoissonSampler ps2 = new WrapperPoissonSampler(rng, mean);
             for (int i = 0; i < LOOPS; i++) {
                 data4[i] = ps2.sample();
             }
             long singleTime2 = System.nanoTime() - start;
 
             System.out.printf(
-                    "Mean %d  Single construction (%8d) vs Loop construction                          (%8d)   (%f.2x faster)\n",
+                    "Mean %5.1f  Single construction (%8d) vs Loop construction                          (%8d)   (%f.2x faster)\n",
                     mean, singleTime, loopTime, (double) loopTime / singleTime);
             System.out.printf(
-                    "Mean %d  Single construction (%8d) vs Loop construction with no cache            (%8d)   (%f.2x faster)\n",
+                    "Mean %5.1f  Single construction (%8d) vs Loop construction with no cache            (%8d)   (%f.2x faster)\n",
                     mean, singleTime, loopTime2, (double) loopTime2 / singleTime);
             System.out.printf(
-                    "Mean %d  Single construction (%8d) vs Single construction with no cache          (%8d)   (%f.2x faster)\n",
+                    "Mean %5.1f  Single construction (%8d) vs Single construction with no cache          (%8d)   (%f.2x faster)\n",
                     mean, singleTime, singleTime2, (double) singleTime2 / singleTime);
             Assert.assertArrayEquals("Random samples are not the same", data1, data3);
             Assert.assertArrayEquals("Random samples are not the same", data2, data4);
             // Assertions.assertTrue(loopTime > singleTime * 2, "Construction cost inside
             // loop causes >2x slowdown");
+
+            sb.append('|').append(round1DP(mean));
+            sb.append('|').append(LOOPS);
+            sb.append('|').append(singleTime);
+            sb.append('|').append(loopTime);
+            sb.append('|').append(round3DP((double) loopTime / singleTime));
+            sb.append('|').append(singleTime2);
+            sb.append('|').append(round3DP((double) singleTime2 / singleTime));
+            sb.append('|').append(loopTime2);
+            sb.append('|').append(round3DP((double) loopTime2 / singleTime));
+            sb.append("|\n");
         }
+
+        System.out.println("---");
+        System.out.print(sb.toString());
+        System.out.println("---");
+    }
+
+    private static String round3DP(double d) {
+        return String.format("%.3f", d);
     }
 }
