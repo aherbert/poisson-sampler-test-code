@@ -54,7 +54,7 @@ import org.apache.commons.rng.sampling.distribution.PoissonSampler;
 @Fork(value = 1, jvmArgs = { "-server", "-Xms128M", "-Xmx128M" })
 public class PoissonSamplersPerformance {
     /** Number of samples per run. */
-    private static final int NUM_SAMPLES = 10000000;
+    private static final int NUM_SAMPLES = 1000000;
 
     /**
      * The benchmark state (retrieve the various "RandomSource"s).
@@ -167,7 +167,7 @@ public class PoissonSamplersPerformance {
      * @param bh      Data sink.
      */
     @Benchmark
-    public void runSmallMean_NoCachePoissonSampler(Sources sources, SmallMean mean, Blackhole bh) {
+    public void runSmallMean_WrapperPoissonSampler(Sources sources, SmallMean mean, Blackhole bh) {
         runSample(new WrapperPoissonSampler(sources.getGenerator(), mean.getMean()), bh);
     }
 
@@ -197,7 +197,7 @@ public class PoissonSamplersPerformance {
      * @param bh      Data sink.
      */
     @Benchmark
-    public void runLargeMean_NoCachePoissonSampler(Sources sources, LargeMean mean, Blackhole bh) {
+    public void runLargeMean_WrapperPoissonSampler(Sources sources, LargeMean mean, Blackhole bh) {
         runSample(new WrapperPoissonSampler(sources.getGenerator(), mean.getMean()), bh);
     }
 
