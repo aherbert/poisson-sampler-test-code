@@ -56,44 +56,44 @@ public class PoissonSamplersPerformance {
     /** Number of samples per run. */
     private static final int NUM_SAMPLES = 1000000;
 
+/**
+ * The benchmark state (retrieve the various "RandomSource"s).
+ */
+@State(Scope.Benchmark)
+public static class Sources {
     /**
-     * The benchmark state (retrieve the various "RandomSource"s).
+     * RNG providers.
      */
-    @State(Scope.Benchmark)
-    public static class Sources {
-        /**
-         * RNG providers.
-         */
-        @Param({"WELL_19937_C",
-                "WELL_44497_B",
-                "SPLIT_MIX_64"
-            })
-        private String randomSourceName;
+    @Param({"WELL_19937_C",
+            "WELL_44497_B",
+            "SPLIT_MIX_64"
+           })
+    private String randomSourceName;
 
-        /** RNG. */
-        private RestorableUniformRandomProvider generator;
+    /** RNG. */
+    private RestorableUniformRandomProvider generator;
 
-        /**
-         * The state of the generator at the start of the test (for reproducibility).
-         */
-        private RandomProviderState state;
+    /**
+     * The state of the generator at the start of the test (for reproducibility).
+     */
+    private RandomProviderState state;
 
-        /**
-         * @return the RNG.
-         */
-        public UniformRandomProvider getGenerator() {
-            generator.restoreState(state);
-            return generator;
-        }
-
-        /** Instantiates generator. */
-        @Setup
-        public void setup() {
-            final RandomSource randomSource = RandomSource.valueOf(randomSourceName);
-            generator = RandomSource.create(randomSource);
-            state = generator.saveState();
-        }
+    /**
+     * @return the RNG.
+     */
+    public UniformRandomProvider getGenerator() {
+        generator.restoreState(state);
+        return generator;
     }
+
+    /** Instantiates generator. */
+    @Setup
+    public void setup() {
+        final RandomSource randomSource = RandomSource.valueOf(randomSourceName);
+        generator = RandomSource.create(randomSource);
+        state = generator.saveState();
+    }
+}
 
     /**
      * The small mean value for testing.
@@ -124,7 +124,7 @@ public class PoissonSamplersPerformance {
         /**
          * Test mean.
          */
-        @Param({ "40.3", "57.9" })
+        @Param({ "40.3", "57.9", "142.3" })
         private double mean;
 
         /**
