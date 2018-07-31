@@ -55,45 +55,47 @@ import org.apache.commons.rng.sampling.distribution.PoissonSampler;
 public class PoissonSamplersPerformance {
     /** Number of samples per run. */
     private static final int NUM_SAMPLES = 1000000;
-
-/**
- * The benchmark state (retrieve the various "RandomSource"s).
- */
-@State(Scope.Benchmark)
-public static class Sources {
-    /**
-     * RNG providers.
-     */
-    @Param({"WELL_19937_C",
-            "WELL_44497_B",
-            "SPLIT_MIX_64"
-           })
-    private String randomSourceName;
-
-    /** RNG. */
-    private RestorableUniformRandomProvider generator;
+    /** Number of samples per run. */
+    private static final int NUM_SINGLE_USE_SAMPLES = 100000;
 
     /**
-     * The state of the generator at the start of the test (for reproducible results).
+     * The benchmark state (retrieve the various "RandomSource"s).
      */
-    private RandomProviderState state;
-
-    /**
-     * @return the RNG.
-     */
-    public UniformRandomProvider getGenerator() {
-        generator.restoreState(state);
-        return generator;
+    @State(Scope.Benchmark)
+    public static class Sources {
+        /**
+         * RNG providers.
+         */
+        @Param({"WELL_19937_C",
+                "WELL_44497_B",
+                "SPLIT_MIX_64"
+               })
+        private String randomSourceName;
+    
+        /** RNG. */
+        private RestorableUniformRandomProvider generator;
+    
+        /**
+         * The state of the generator at the start of the test (for reproducible results).
+         */
+        private RandomProviderState state;
+    
+        /**
+         * @return the RNG.
+         */
+        public UniformRandomProvider getGenerator() {
+            generator.restoreState(state);
+            return generator;
+        }
+    
+        /** Instantiates generator. */
+        @Setup
+        public void setup() {
+            final RandomSource randomSource = RandomSource.valueOf(randomSourceName);
+            generator = RandomSource.create(randomSource);
+            state = generator.saveState();
+        }
     }
-
-    /** Instantiates generator. */
-    @Setup
-    public void setup() {
-        final RandomSource randomSource = RandomSource.valueOf(randomSourceName);
-        generator = RandomSource.create(randomSource);
-        state = generator.saveState();
-    }
-}
 
     /**
      * The small mean value for testing.
@@ -101,9 +103,10 @@ public static class Sources {
     @State(Scope.Benchmark)
     public static class SmallMean {
         /**
-         * Test mean.
+         * Test mean. 
+         * Note the small mean sampler is used when mean is under 40.
          */
-        @Param({ "5.3", "8.5", "35.7" })
+        @Param({ "5.3", "20.1", "35.7" })
         private double mean;
 
         /**
@@ -122,9 +125,10 @@ public static class Sources {
     @State(Scope.Benchmark)
     public static class LargeMean {
         /**
-         * Test mean.
+         * Test mean. Note the PoissonSampler log(n!) cache goes 
+         * from 40-80 so test the extremes and the middle.
          */
-        @Param({ "40.3", "57.9", "142.3" })
+        @Param({ "40.3", "60.9", "142.3" })
         private double mean;
 
         /**
@@ -135,6 +139,20 @@ public static class Sources {
         public double getMean() {
             return mean;
         }
+    }
+    
+    /**
+     * A factory for creating DiscreteSampler objects.
+     */
+    @FunctionalInterface
+    private interface DiscreteSamplerFactory
+    {
+        /**
+         * Creates a new DiscreteSampler object.
+         *
+         * @return the discrete sampler
+         */
+        DiscreteSampler createDiscreteSampler();
     }
 
     /**
@@ -148,6 +166,18 @@ public static class Sources {
             bh.consume(sampler.sample());
         }
     }
+    
+    /**
+     * Exercises a discrete sampler created for a single use
+     *
+     * @param factory the factory
+     * @param bh      Data sink.
+     */
+    private static void runSample(DiscreteSamplerFactory factory, Blackhole bh) {
+        for (int i = 0; i < NUM_SINGLE_USE_SAMPLES; i++) {
+            bh.consume(factory.createDiscreteSampler().sample());
+        }
+    }
 
     // Benchmarks methods below.
 
@@ -158,7 +188,8 @@ public static class Sources {
      */
     @Benchmark
     public void runSmallMean_PoissonSampler(Sources sources, SmallMean mean, Blackhole bh) {
-        runSample(new PoissonSampler(sources.getGenerator(), mean.getMean()), bh);
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(new PoissonSampler(r, mean.getMean()), bh);
     }
 
     /**
@@ -168,7 +199,8 @@ public static class Sources {
      */
     @Benchmark
     public void runSmallMean_WrapperPoissonSampler(Sources sources, SmallMean mean, Blackhole bh) {
-        runSample(new WrapperPoissonSampler(sources.getGenerator(), mean.getMean()), bh);
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(new WrapperPoissonSampler(r, mean.getMean()), bh);
     }
 
     /**
@@ -178,7 +210,8 @@ public static class Sources {
      */
     @Benchmark
     public void runSmallMean_SmallMeanPoissonSampler(Sources sources, SmallMean mean, Blackhole bh) {
-        runSample(new SmallMeanPoissonSampler(sources.getGenerator(), mean.getMean()), bh);
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(new SmallMeanPoissonSampler(r, mean.getMean()), bh);
     }
 
     /**
@@ -188,7 +221,8 @@ public static class Sources {
      */
     @Benchmark
     public void runLargeMean_PoissonSampler(Sources sources, LargeMean mean, Blackhole bh) {
-        runSample(new PoissonSampler(sources.getGenerator(), mean.getMean()), bh);
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(new PoissonSampler(r, mean.getMean()), bh);
     }
 
     /**
@@ -198,7 +232,8 @@ public static class Sources {
      */
     @Benchmark
     public void runLargeMean_WrapperPoissonSampler(Sources sources, LargeMean mean, Blackhole bh) {
-        runSample(new WrapperPoissonSampler(sources.getGenerator(), mean.getMean()), bh);
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(new WrapperPoissonSampler(r, mean.getMean()), bh);
     }
 
     /**
@@ -208,6 +243,73 @@ public static class Sources {
      */
     @Benchmark
     public void runLargeMean_LargeMeanPoissonSampler(Sources sources, LargeMean mean, Blackhole bh) {
-        runSample(new LargeMeanPoissonSampler(sources.getGenerator(), mean.getMean()), bh);
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(new LargeMeanPoissonSampler(r, mean.getMean()), bh);
+    }
+    
+    /**
+     * @param sources Source of randomness.
+     * @param mean    the mean
+     * @param bh      Data sink.
+     */
+    @Benchmark
+    public void runSmallMeanSingleUse_PoissonSampler(Sources sources, SmallMean mean, Blackhole bh) {
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(() -> new PoissonSampler(r, mean.getMean()), bh);
+    }
+
+    /**
+     * @param sources Source of randomness.
+     * @param mean    the mean
+     * @param bh      Data sink.
+     */
+    @Benchmark
+    public void runSmallMeanSingleUse_WrapperPoissonSampler(Sources sources, SmallMean mean, Blackhole bh) {
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(() -> new WrapperPoissonSampler(r, mean.getMean()), bh);
+    }
+
+    /**
+     * @param sources Source of randomness.
+     * @param mean    the mean
+     * @param bh      Data sink.
+     */
+    @Benchmark
+    public void runSmallMeanSingleUse_SmallMeanPoissonSampler(Sources sources, SmallMean mean, Blackhole bh) {
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(() -> new SmallMeanPoissonSampler(r, mean.getMean()), bh);
+    }
+
+    /**
+     * @param sources Source of randomness.
+     * @param mean    the mean
+     * @param bh      Data sink.
+     */
+    @Benchmark
+    public void runLargeMeanSingleUse_PoissonSampler(Sources sources, LargeMean mean, Blackhole bh) {
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(() -> new PoissonSampler(r, mean.getMean()), bh);
+    }
+
+    /**
+     * @param sources Source of randomness.
+     * @param mean    the mean
+     * @param bh      Data sink.
+     */
+    @Benchmark
+    public void runLargeMeanSingleUse_WrapperPoissonSampler(Sources sources, LargeMean mean, Blackhole bh) {
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(() -> new WrapperPoissonSampler(r, mean.getMean()), bh);
+    }
+
+    /**
+     * @param sources Source of randomness.
+     * @param mean    the mean
+     * @param bh      Data sink.
+     */
+    @Benchmark
+    public void runLargeMeanSingleUse_LargeMeanPoissonSampler(Sources sources, LargeMean mean, Blackhole bh) {
+        final UniformRandomProvider r = sources.getGenerator();
+        runSample(() -> new LargeMeanPoissonSampler(r, mean.getMean()), bh);
     }
 }
