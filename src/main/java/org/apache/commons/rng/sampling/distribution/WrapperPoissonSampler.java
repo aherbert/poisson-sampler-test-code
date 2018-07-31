@@ -24,14 +24,15 @@ import org.apache.commons.rng.UniformRandomProvider;
  * choosing the appropriate sampler based on the {@code mean}.
  */
 public class WrapperPoissonSampler 
-implements DiscreteSampler {
+    implements DiscreteSampler {
+
     /** Value for switching sampling algorithm. */
     static final double PIVOT = 40;
     /** The internal Poisson sampler. */
     private final DiscreteSampler poissonSampler;
 
     /**
-     * @param rng  Generator of uniformly distributed random numbers.
+     * @param rng Generator of uniformly distributed random numbers.
      * @param mean Mean.
      * @throws IllegalArgumentException if {@code mean <= 0}.
      */
@@ -44,6 +45,7 @@ implements DiscreteSampler {
     }
 
     /** {@inheritDoc} */
+    @Override
     public int sample() {
         return poissonSampler.sample();
     }

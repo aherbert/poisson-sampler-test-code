@@ -23,7 +23,7 @@ public class SmallMeanPoissonSampler
     final double mean;
     /** 
      * Pre-compute {@code Math.exp(-mean)}. 
-     * Note: This is the probability of the Poisson sample {@code n=0}. 
+     * Note: This is the probability of the Poisson sample {@code P(n=0)}.
      */
     final double p0;
     /** Pre-compute {@code 1000 * mean} as the upper limit of the sample. */
@@ -43,11 +43,12 @@ public class SmallMeanPoissonSampler
         
         this.mean = mean;
         p0 = Math.exp(-mean);
-        // The returned sample is bounded by 1000*mean or Integer.MAX_VALUE
+        // The returned sample is bounded by 1000 * mean or Integer.MAX_VALUE
         limit = (int) Math.ceil(Math.min(1000 * mean, Integer.MAX_VALUE));
     }
 
     /** {@inheritDoc} */
+    @Override
     public int sample() {
         int n = 0;
         double r = 1;

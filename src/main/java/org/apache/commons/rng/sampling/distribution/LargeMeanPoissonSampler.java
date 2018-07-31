@@ -4,20 +4,23 @@ import org.apache.commons.rng.UniformRandomProvider;
 import org.apache.commons.rng.sampling.distribution.InternalUtils.FactorialLog;
 
 /**
- * Sampler for the
- * <a href="http://mathworld.wolfram.com/PoissonDistribution.html">Poisson
- * distribution</a>.
+ * Sampler for the <a href="http://mathworld.wolfram.com/PoissonDistribution.html">Poisson distribution</a>.
  *
  * <ul>
- * <li>For large means, we use the rejection algorithm described in <blockquote>
- * Devroye, Luc. (1981).<i>The Computer Generation of Poisson Random
- * Variables</i><br>
- * <strong>Computing</strong> vol. 26 pp. 197-207. </blockquote></li>
+ *  <li>
+ *   For large means, we use the rejection algorithm described in
+ *   <blockquote>
+ *    Devroye, Luc. (1981).<i>The Computer Generation of Poisson Random Variables</i><br>
+ *    <strong>Computing</strong> vol. 26 pp. 197-207.
+ *   </blockquote>
+ *  </li>
  * </ul>
  * 
  * This sampler is suitable for {@code mean>=40}.
  */
-public class LargeMeanPoissonSampler extends SamplerBase implements DiscreteSampler {
+public class LargeMeanPoissonSampler
+    extends SamplerBase
+    implements DiscreteSampler {
 
     /** Class to compute {@code log(n!)}. This has no cached values. */
     private static final InternalUtils.FactorialLog NO_CACHE_FACTORIAL_LOG;
@@ -29,16 +32,15 @@ public class LargeMeanPoissonSampler extends SamplerBase implements DiscreteSamp
         NO_CACHE_FACTORIAL_LOG = FactorialLog.create();
     }
 
-    /** Local class to compute {@code log(n!)}. This may have cached values. */
-    private final InternalUtils.FactorialLog factorialLog;
-    
     /** Mean of the distribution. */
     final double mean;
     /** Exponential. */
     private final ContinuousSampler exponential;
     /** Gaussian. */
     private final ContinuousSampler gaussian;
-
+    /** Local class to compute {@code log(n!)}. This may have cached values. */
+    private final InternalUtils.FactorialLog factorialLog;
+ 
     // Working values
     private final double lambda;
     private final double lambdaFractional;
@@ -55,7 +57,7 @@ public class LargeMeanPoissonSampler extends SamplerBase implements DiscreteSamp
     private final DiscreteSampler smallMeanPoissonSampler;
 
     /**
-     * @param rng  Generator of uniformly distributed random numbers.
+     * @param rng Generator of uniformly distributed random numbers.
      * @param mean Mean.
      * @throws IllegalArgumentException if {@code mean <= 0}.
      */
@@ -69,6 +71,8 @@ public class LargeMeanPoissonSampler extends SamplerBase implements DiscreteSamp
 
         gaussian = new BoxMullerGaussianSampler(rng, 0, 1);
         exponential = new AhrensDieterExponentialSampler(rng, 1);
+        // Support future extension to input the cached log(n!) values.
+        // Plain constructor uses the uncached function.
         factorialLog = NO_CACHE_FACTORIAL_LOG;
 
         // Cache values used in the algorithm
@@ -79,12 +83,12 @@ public class LargeMeanPoissonSampler extends SamplerBase implements DiscreteSamp
         delta = Math.sqrt(lambda * Math.log(32 * lambda / Math.PI + 1));
         halfDelta = delta / 2;
         twolpd = 2 * lambda + delta;
-        final double a1 = Math.sqrt(Math.PI * twolpd) * Math.exp(1 / (8 * lambda));
+        c1 = 1 / (8 * lambda);
+        final double a1 = Math.sqrt(Math.PI * twolpd) * Math.exp(c1);
         final double a2 = (twolpd / delta) * Math.exp(-delta * (1 + delta) / twolpd);
         final double aSum = a1 + a2 + 1;
         p1 = a1 / aSum;
         p2 = a2 / aSum;
-        c1 = 1 / (8 * lambda);
 
         // The algorithm requires a Poisson sample from the lambda fraction
         smallMeanPoissonSampler = (lambdaFractional < Double.MIN_VALUE) 
@@ -93,10 +97,13 @@ public class LargeMeanPoissonSampler extends SamplerBase implements DiscreteSamp
     }
     
     /** {@inheritDoc} */
+    @Override
     public int sample() {
 
-        final long y2 = (smallMeanPoissonSampler == null) ? 0 : smallMeanPoissonSampler.sample();
-
+        // Move this to the end if this version does not have to match
+        // the original PoissonSampler
+        final int y2 = (smallMeanPoissonSampler == null) ? 0 : smallMeanPoissonSampler.sample();
+        
         double x = 0;
         double y = 0;
         double v = 0;
@@ -119,11 +126,10 @@ public class LargeMeanPoissonSampler extends SamplerBase implements DiscreteSamp
                 if (u > p1 + p2) {
                     y = lambda;
                     break;
-                } // else {
+                }
                 x = delta + (twolpd / delta) * exponential.sample();
                 y = Math.ceil(x);
                 v = -exponential.sample() - delta * (x + 1) / twolpd;
-                // }
             }
             a = x < 0 ? 1 : 0;
             t = y * (y + 1) / (2 * lambda);
@@ -145,6 +151,15 @@ public class LargeMeanPoissonSampler extends SamplerBase implements DiscreteSamp
                 break;
             }
         }
+        
+        //// Do this if the return value does not have to match the old PoissonSampler
+        //if (smallMeanPoissonSampler == null) {
+        //    // No small mean to sample
+        //    return (int) Math.min((long) y, Integer.MAX_VALUE);
+        //}
+        //    
+        //return (int) Math.min(smallMeanPoissonSampler.sample() + (long) y, Integer.MAX_VALUE);
+        
         return (int) Math.min(y2 + (long) y, Integer.MAX_VALUE);
     }
 
