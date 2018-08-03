@@ -90,9 +90,11 @@ public class PoissonSamplersPerformance {
     @State(Scope.Benchmark)
     public static class Sources {
         /**
-         * RNG providers.
+         * RNG providers. Use different speeds.
+         * 
+         * @see <a href="https://commons.apache.org/proper/commons-rng/userguide/rng.html">Commons RNG user guide</a>
          */
-        @Param({ "WELL_19937_C", "WELL_44497_B", "SPLIT_MIX_64" })
+        @Param({ "SPLIT_MIX_64", "KISS", "WELL_1024_A", "WELL_44497_B" })
         private String randomSourceName;
 
         /** RNG. */
@@ -174,7 +176,7 @@ public class PoissonSamplersPerformance {
         /**
          * Test range.
          */
-        @Param({ "256", "1024" })
+        @Param({ "4", "16", "64", "256", "1024", "4096" })
         private double range;
 
         /**
