@@ -8,8 +8,8 @@ package org.apache.commons.rng.sampling.distribution;
 public interface ResettingPoissonSampler {
 
     /**
-     * Reset the Gaussian. This just effectively clears the cached pair of Gaussian
-     * numbers.
+     * Reset the Gaussian. This just effectively clears the cached pair of
+     * Gaussian numbers.
      */
     void resetGaussian();
 }

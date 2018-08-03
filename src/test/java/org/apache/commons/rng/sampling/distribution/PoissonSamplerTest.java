@@ -14,26 +14,27 @@ import gnu.trove.list.array.TDoubleArrayList;
  */
 public class PoissonSamplerTest {
     /**
-     * This tests the speed of constructing a PoissonSampler inside a loop verses
-     * outside.
+     * This tests the speed of constructing a PoissonSampler inside a loop
+     * verses outside.
      */
     @Test
     public void canComputePoissonSampleWithStaticFactorialLog() {
-        Long seed = 768348678L;
-        RestorableUniformRandomProvider rng = RandomSource.create(RandomSource.WELL_19937_C, seed);
-        RandomProviderState state = rng.saveState();
+        final Long seed = 768348678L;
+        final RestorableUniformRandomProvider rng = RandomSource
+                .create(RandomSource.WELL_19937_C, seed);
+        final RandomProviderState state = rng.saveState();
 
         // Warm-up RNG
-        int LOOPS = 10000;
+        final int LOOPS = 10000;
         for (int i = 0; i < LOOPS; i++) {
             rng.nextDouble();
             rng.nextDouble();
             rng.nextDouble();
         }
 
-        int[] data1 = new int[LOOPS];
-        int[] data2 = new int[LOOPS];
-        int[] data3 = new int[LOOPS];
+        final int[] data1 = new int[LOOPS];
+        final int[] data2 = new int[LOOPS];
+        final int[] data3 = new int[LOOPS];
 
         for (int n = 10; n <= 80; n += 5) {
             final double mean = n + 0.3;
@@ -43,18 +44,20 @@ public class PoissonSamplerTest {
             long start = System.nanoTime();
             for (int i = 0; i < LOOPS; i++)
                 data1[i] = new DefaultPoissonSampler(rng, mean).sample();
-            long loopTime = System.nanoTime() - start;
+            final long loopTime = System.nanoTime() - start;
 
             // Time the default sampler constructed outside a loop
             rng.restoreState(state);
 
             start = System.nanoTime();
-            DefaultPoissonSampler ps = new DefaultPoissonSampler(rng, mean);
+            final DefaultPoissonSampler ps = new DefaultPoissonSampler(rng,
+                    mean);
             for (int i = 0; i < LOOPS; i++) {
-                ps.resetGaussian(); // This ensure the random numbers are the same
+                ps.resetGaussian(); // This ensure the random numbers are the
+                                    // same
                 data2[i] = ps.sample();
             }
-            long singleTime = System.nanoTime() - start;
+            final long singleTime = System.nanoTime() - start;
 
             // Time the static cache sampler constructed inside a loop
             rng.restoreState(state);
@@ -62,17 +65,21 @@ public class PoissonSamplerTest {
             start = System.nanoTime();
             for (int i = 0; i < LOOPS; i++)
                 data3[i] = new FixedCachePoissonSampler(rng, mean).sample();
-            long fastLoopTime = System.nanoTime() - start;
+            final long fastLoopTime = System.nanoTime() - start;
 
             System.out.printf(
                     "Mean %5.1f  Single construction (%8d) vs Loop construction                          (%8d)   (%f.2x faster)\n",
                     mean, singleTime, loopTime, (double) loopTime / singleTime);
             System.out.printf(
                     "Mean %5.1f  Single construction (%8d) vs Loop construction with static FactorialLog (%8d)   (%f.2x faster)\n",
-                    mean, singleTime, fastLoopTime, (double) fastLoopTime / singleTime);
-            Assert.assertArrayEquals("Random samples are not the same", data1, data2);
-            Assert.assertArrayEquals("Random samples are not the same", data1, data3);
-            // Assertions.assertTrue(loopTime > singleTime * 2, "Construction cost inside
+                    mean, singleTime, fastLoopTime,
+                    (double) fastLoopTime / singleTime);
+            Assert.assertArrayEquals("Random samples are not the same", data1,
+                    data2);
+            Assert.assertArrayEquals("Random samples are not the same", data1,
+                    data3);
+            // Assertions.assertTrue(loopTime > singleTime * 2, "Construction
+            // cost inside
             // loop causes >2x slowdown");
         }
     }
@@ -83,7 +90,7 @@ public class PoissonSamplerTest {
     @Test
     public void canHistogramData() {
         // Empty
-        IntegerHistogram h = new IntegerHistogram(10);
+        final IntegerHistogram h = new IntegerHistogram(10);
         checkStats(new int[0][0], h);
 
         // Fill inside and outside cache range
@@ -114,8 +121,8 @@ public class PoissonSamplerTest {
     }
 
     private static void checkStats(int[][] histogram, IntegerHistogram h) {
-        int[][] o = h.getHistogram();
-        double[] stats = h.getStatistics();
+        final int[][] o = h.getHistogram();
+        final double[] stats = h.getStatistics();
 
         if (histogram.length == 0) {
             Assert.assertNull(stats);
@@ -124,15 +131,15 @@ public class PoissonSamplerTest {
 
         Assert.assertArrayEquals(histogram, o);
 
-        SummaryStatistics s = new SummaryStatistics();
-        int[] value = histogram[0];
-        int[] count = histogram[1];
-        for (int i = 0; i < value.length; i++) {
+        final SummaryStatistics s = new SummaryStatistics();
+        final int[] value = histogram[0];
+        final int[] count = histogram[1];
+        for (int i = 0; i < value.length; i++)
             for (int j = count[i]; j-- > 0;)
                 s.addValue(value[i]);
-        }
 
-        double[] e = new double[] { s.getMin(), s.getMax(), s.getMean(), s.getStandardDeviation() };
+        final double[] e = new double[] { s.getMin(), s.getMax(), s.getMean(),
+                s.getStandardDeviation() };
 
         Assert.assertEquals("Min", e[0], stats[0], 0);
         Assert.assertEquals("Max", e[1], stats[1], 0);
@@ -145,20 +152,22 @@ public class PoissonSamplerTest {
      */
     @Test
     public void canRecordLogFactorialUsage() {
-        Long seed = 768348678L;
-        RestorableUniformRandomProvider rng = RandomSource.create(RandomSource.WELL_19937_C, seed);
+        final Long seed = 768348678L;
+        final RestorableUniformRandomProvider rng = RandomSource
+                .create(RandomSource.WELL_19937_C, seed);
         // The maximum mean to test.
-        // Note: The minimum is 40 (the minimum mean where this sampling method is
+        // Note: The minimum is 40 (the minimum mean where this sampling method
+        // is
         // used).
         int max = 100;
         // The number of Poisson samples.
         // This is an upper limit to prevent excess sampling.
-        int N_SAMPLES = 2000000;
+        final int N_SAMPLES = 2000000;
         // The number of log(n!) calls
-        int N_CALLS = 100000;
+        final int N_CALLS = 100000;
 
         // Get the means for testing
-        TDoubleArrayList list = new TDoubleArrayList();
+        final TDoubleArrayList list = new TDoubleArrayList();
         for (int mean = 40; mean <= max; mean += 5)
             list.add(mean + 0.3);
         for (int i = 0; i < 10; i++) {
@@ -166,15 +175,17 @@ public class PoissonSamplerTest {
             list.add(max + 0.3);
         }
 
-        IntegerHistogram h = new IntegerHistogram(4096);
+        final IntegerHistogram h = new IntegerHistogram(4096);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("||Mean||Samples||log(n!) calls||Calls/sample||min n||max n||Av n||SD n||Poisson SD||\n");
+        final StringBuilder sb = new StringBuilder();
+        sb.append(
+                "||Mean||Samples||log(n!) calls||Calls/sample||min n||max n||Av n||SD n||Poisson SD||\n");
 
-        for (double mean : list.toArray()) {
+        for (final double mean : list.toArray()) {
             h.clear();
             int samples = 0;
-            RecordingPoissonSampler ps = new RecordingPoissonSampler(rng, mean, h);
+            final RecordingPoissonSampler ps = new RecordingPoissonSampler(rng,
+                    mean, h);
             while (samples < N_SAMPLES) {
                 samples++;
                 ps.sample();
@@ -184,16 +195,17 @@ public class PoissonSamplerTest {
             }
 
             // Report
-            double[] stats = h.getStatistics();
-            double callPerSample = (double) h.getCount() / samples;
-            int minN = (int) stats[0];
-            int maxN = (int) stats[1];
-            double av = stats[2];
-            double sd = stats[3];
-            double poissonSD = Math.sqrt(mean);
+            final double[] stats = h.getStatistics();
+            final double callPerSample = (double) h.getCount() / samples;
+            final int minN = (int) stats[0];
+            final int maxN = (int) stats[1];
+            final double av = stats[2];
+            final double sd = stats[3];
+            final double poissonSD = Math.sqrt(mean);
             System.out.printf(
                     "Mean %5.1f  Samples=%7d  log(n!)=%6d   (%8.3g / sample)  min=%6d  max=%6d  mean=%10.3f  SD=%7.3f   Poisson SD=%7.3f\n",
-                    mean, samples, h.getCount(), callPerSample, minN, maxN, av, sd, poissonSD);
+                    mean, samples, h.getCount(), callPerSample, minN, maxN, av,
+                    sd, poissonSD);
             sb.append('|').append(round1DP(mean));
             sb.append('|').append(samples);
             sb.append('|').append(h.getCount());
@@ -216,29 +228,31 @@ public class PoissonSamplerTest {
     }
 
     /**
-     * This tests the speed of the default PoissonSampler and a new implementation
-     * with no cache of the {@code log(n!)} function inside a loop verses outside.
+     * This tests the speed of the default PoissonSampler and a new
+     * implementation with no cache of the {@code log(n!)} function inside a
+     * loop verses outside.
      */
     @Test
     public void canComputeFastPoissonSamples() {
-        Long seed = 768348678L;
-        RestorableUniformRandomProvider rng = RandomSource.create(RandomSource.WELL_19937_C, seed);
-        RandomProviderState state = rng.saveState();
+        final Long seed = 768348678L;
+        final RestorableUniformRandomProvider rng = RandomSource
+                .create(RandomSource.WELL_19937_C, seed);
+        final RandomProviderState state = rng.saveState();
 
         // Warm-up RNG
-        int LOOPS = 100000;
+        final int LOOPS = 100000;
         for (int i = 0; i < LOOPS; i++) {
             rng.nextDouble();
             rng.nextDouble();
             rng.nextDouble();
         }
 
-        int[] data1 = new int[LOOPS];
-        int[] data2 = new int[LOOPS];
-        int[] data3 = new int[LOOPS];
-        int[] data4 = new int[LOOPS];
+        final int[] data1 = new int[LOOPS];
+        final int[] data2 = new int[LOOPS];
+        final int[] data3 = new int[LOOPS];
+        final int[] data4 = new int[LOOPS];
 
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append(
                 "||Mean||Samples||PoissonSampler||PoissonSampler single-use||Relative||NoCachePoissonSampler||Relative||NoCachePoissonSampler single-use||Relative||\n");
 
@@ -250,17 +264,16 @@ public class PoissonSamplerTest {
             long start = System.nanoTime();
             for (int i = 0; i < LOOPS; i++)
                 data1[i] = new PoissonSampler(rng, mean).sample();
-            long loopTime = System.nanoTime() - start;
+            final long loopTime = System.nanoTime() - start;
 
             // Time the default sampler constructed outside a loop
             rng.restoreState(state);
 
             start = System.nanoTime();
-            PoissonSampler ps = new PoissonSampler(rng, mean);
-            for (int i = 0; i < LOOPS; i++) {
+            final PoissonSampler ps = new PoissonSampler(rng, mean);
+            for (int i = 0; i < LOOPS; i++)
                 data2[i] = ps.sample();
-            }
-            long singleTime = System.nanoTime() - start;
+            final long singleTime = System.nanoTime() - start;
 
             // Time the no cache sampler constructed inside a loop
             rng.restoreState(state);
@@ -268,30 +281,35 @@ public class PoissonSamplerTest {
             start = System.nanoTime();
             for (int i = 0; i < LOOPS; i++)
                 data3[i] = new WrapperPoissonSampler(rng, mean).sample();
-            long loopTime2 = System.nanoTime() - start;
+            final long loopTime2 = System.nanoTime() - start;
 
             // Time the no cache sampler constructed outside a loop
             rng.restoreState(state);
 
             start = System.nanoTime();
-            WrapperPoissonSampler ps2 = new WrapperPoissonSampler(rng, mean);
-            for (int i = 0; i < LOOPS; i++) {
+            final WrapperPoissonSampler ps2 = new WrapperPoissonSampler(rng,
+                    mean);
+            for (int i = 0; i < LOOPS; i++)
                 data4[i] = ps2.sample();
-            }
-            long singleTime2 = System.nanoTime() - start;
+            final long singleTime2 = System.nanoTime() - start;
 
             System.out.printf(
                     "Mean %5.1f  Single construction (%8d) vs Loop construction                          (%8d)   (%f.2x faster)\n",
                     mean, singleTime, loopTime, (double) loopTime / singleTime);
             System.out.printf(
                     "Mean %5.1f  Single construction (%8d) vs Loop construction with no cache            (%8d)   (%f.2x faster)\n",
-                    mean, singleTime, loopTime2, (double) loopTime2 / singleTime);
+                    mean, singleTime, loopTime2,
+                    (double) loopTime2 / singleTime);
             System.out.printf(
                     "Mean %5.1f  Single construction (%8d) vs Single construction with no cache          (%8d)   (%f.2x faster)\n",
-                    mean, singleTime, singleTime2, (double) singleTime2 / singleTime);
-            Assert.assertArrayEquals("Random samples are not the same", data1, data3);
-            Assert.assertArrayEquals("Random samples are not the same", data2, data4);
-            // Assertions.assertTrue(loopTime > singleTime * 2, "Construction cost inside
+                    mean, singleTime, singleTime2,
+                    (double) singleTime2 / singleTime);
+            Assert.assertArrayEquals("Random samples are not the same", data1,
+                    data3);
+            Assert.assertArrayEquals("Random samples are not the same", data2,
+                    data4);
+            // Assertions.assertTrue(loopTime > singleTime * 2, "Construction
+            // cost inside
             // loop causes >2x slowdown");
 
             sb.append('|').append(round1DP(mean));

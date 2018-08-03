@@ -24,7 +24,8 @@ public class IntegerHistogram {
      */
     public IntegerHistogram(int cacheSize) {
         if (cacheSize < 1)
-            throw new IllegalArgumentException("Unsupported cache size: " + cacheSize);
+            throw new IllegalArgumentException(
+                    "Unsupported cache size: " + cacheSize);
         h = new int[cacheSize];
     }
 
@@ -35,11 +36,10 @@ public class IntegerHistogram {
      */
     public void add(int n) {
         count++;
-        if (n < h.length) {
+        if (n < h.length)
             h[n]++;
-        } else {
+        else
             extra.adjustOrPutValue(n, 1, 1);
-        }
     }
 
     /**
@@ -57,31 +57,32 @@ public class IntegerHistogram {
      * @return the histogram [values,frequencies]
      */
     public int[][] getHistogram() {
-        TIntArrayList v = new TIntArrayList(h.length);
-        TIntArrayList f = new TIntArrayList(h.length);
-        for (int i = 0; i < h.length; i++) {
+        final TIntArrayList v = new TIntArrayList(h.length);
+        final TIntArrayList f = new TIntArrayList(h.length);
+        for (int i = 0; i < h.length; i++)
             if (h[i] != 0) {
                 v.add(i);
                 f.add(h[i]);
             }
-        }
         if (!extra.isEmpty()) {
             // Sort the entries in the hash map of extra counts
             final int[][] toSort = new int[extra.size()][];
             extra.forEachEntry(new TIntIntProcedure() {
                 int i = 0;
 
+                @Override
                 public boolean execute(int n, int count) {
                     toSort[i++] = new int[] { n, count };
                     return true;
                 }
             });
             Arrays.sort(toSort, new Comparator<int[]>() {
+                @Override
                 public int compare(int[] o1, int[] o2) {
                     return Integer.compare(o1[0], o2[0]);
                 }
             });
-            for (int[] pair : toSort) {
+            for (final int[] pair : toSort) {
                 v.add(pair[0]);
                 f.add(pair[1]);
             }
@@ -120,6 +121,7 @@ public class IntegerHistogram {
             // The max will be in the extra values
             final int[] tmp = new int[1];
             extra.forEachKey(new TIntProcedure() {
+                @Override
                 public boolean execute(int value) {
                     if (tmp[0] < value)
                         tmp[0] = value;
@@ -131,6 +133,7 @@ public class IntegerHistogram {
             // There may only be extra values so the min must be computed
             if (min == h.length) {
                 extra.forEachKey(new TIntProcedure() {
+                    @Override
                     public boolean execute(int value) {
                         if (tmp[0] > value)
                             tmp[0] = value;
@@ -145,18 +148,18 @@ public class IntegerHistogram {
         if ((double) max * max * count < Long.MAX_VALUE) {
             // This assumes that longs will not overflow on the sum-of-squares
             long s = 0, ss = 0;
-            for (int n = 0; n < h.length; n++) {
+            for (int n = 0; n < h.length; n++)
                 if (h[n] != 0) {
-                    long c_by_n = h[n] * (long) n;
+                    final long c_by_n = h[n] * (long) n;
                     s += c_by_n;
                     ss += c_by_n * n;
                 }
-            }
             if (!extra.isEmpty()) {
                 final long[] tmp = new long[2];
                 extra.forEachEntry(new TIntIntProcedure() {
+                    @Override
                     public boolean execute(int n, int count) {
-                        long c_by_n = count * (long) n;
+                        final long c_by_n = count * (long) n;
                         tmp[0] += c_by_n;
                         tmp[1] += c_by_n * n;
                         return true;
@@ -166,9 +169,11 @@ public class IntegerHistogram {
                 ss += tmp[1];
             }
 
-            double mean = (double) s / count;
-            double secondMoment = ss - ((double) s * s) / count;
-            double stdDev = (secondMoment > 0.0) ? Math.sqrt(secondMoment / (count - 1)) : 0;
+            final double mean = (double) s / count;
+            final double secondMoment = ss - ((double) s * s) / count;
+            final double stdDev = (secondMoment > 0.0)
+                    ? Math.sqrt(secondMoment / (count - 1))
+                    : 0;
 
             return new double[] { min, max, mean, stdDev };
         }
@@ -176,19 +181,19 @@ public class IntegerHistogram {
         // This assumes that longs will overflow on the sum-of-squares
         long s = 0;
         double ss = 0;
-        for (int n = 0; n < h.length; n++) {
+        for (int n = 0; n < h.length; n++)
             if (h[n] != 0) {
-                long c_by_n = h[n] * (long) n;
+                final long c_by_n = h[n] * (long) n;
                 s += c_by_n;
                 ss += c_by_n * n;
             }
-        }
         if (!extra.isEmpty()) {
             final long[] tmp1 = new long[1];
             final double[] tmp2 = new double[1];
             extra.forEachEntry(new TIntIntProcedure() {
+                @Override
                 public boolean execute(int n, int count) {
-                    long c_by_n = count * (long) n;
+                    final long c_by_n = count * (long) n;
                     tmp1[0] += c_by_n;
                     tmp2[0] += c_by_n * n;
                     return true;
@@ -198,9 +203,11 @@ public class IntegerHistogram {
             ss += tmp2[0];
         }
 
-        double mean = (double) s / count;
-        double secondMoment = ss - ((double) s * s) / count;
-        double stdDev = (secondMoment > 0.0) ? Math.sqrt(secondMoment / (count - 1)) : 0;
+        final double mean = (double) s / count;
+        final double secondMoment = ss - ((double) s * s) / count;
+        final double stdDev = (secondMoment > 0.0)
+                ? Math.sqrt(secondMoment / (count - 1))
+                : 0;
 
         return new double[] { min, max, mean, stdDev };
     }

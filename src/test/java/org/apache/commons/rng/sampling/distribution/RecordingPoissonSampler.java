@@ -7,7 +7,8 @@ import org.apache.commons.rng.sampling.distribution.InternalUtils.FactorialLog;
  * This is a copy of the {@link PoissonSampler} modified so that the function
  * calls to compute {@code log(n!)} can be recorded.
  */
-public class RecordingPoissonSampler extends SamplerBase implements DiscreteSampler {
+public class RecordingPoissonSampler extends SamplerBase
+        implements DiscreteSampler {
     /** Value for switching sampling algorithm. */
     static final double PIVOT = 40;
     /** Mean of the distribution. */
@@ -29,23 +30,25 @@ public class RecordingPoissonSampler extends SamplerBase implements DiscreteSamp
      * @param histogram the histogram
      * @throws IllegalArgumentException if {@code mean <= 0}.
      */
-    public RecordingPoissonSampler(UniformRandomProvider rng, double mean, IntegerHistogram histogram) {
+    public RecordingPoissonSampler(UniformRandomProvider rng, double mean,
+            IntegerHistogram histogram) {
         super(rng);
-        if (mean <= 0) {
+        if (mean <= 0)
             throw new IllegalArgumentException(mean + " <= " + 0);
-        }
 
         this.mean = mean;
 
         gaussian = new BoxMullerGaussianSampler(rng, 0, 1);
         exponential = new AhrensDieterExponentialSampler(rng, 1);
         factorialLog = mean < PIVOT ? null : // Not used.
-                FactorialLog.create().withCache((int) Math.min(mean, 2 * PIVOT));
+                FactorialLog.create()
+                        .withCache((int) Math.min(mean, 2 * PIVOT));
 
         this.histogram = histogram;
     }
 
     /** {@inheritDoc} */
+    @Override
     public int sample() {
         return (int) Math.min(nextPoisson(mean), Integer.MAX_VALUE);
     }
@@ -62,17 +65,16 @@ public class RecordingPoissonSampler extends SamplerBase implements DiscreteSamp
      */
     private long nextPoisson(double meanPoisson) {
         if (meanPoisson < PIVOT) {
-            double p = Math.exp(-meanPoisson);
+            final double p = Math.exp(-meanPoisson);
             long n = 0;
             double r = 1;
 
             while (n < 1000 * meanPoisson) {
                 r *= nextDouble();
-                if (r >= p) {
+                if (r >= p)
                     n++;
-                } else {
+                else
                     break;
-                }
             }
             return n;
         } else {
@@ -83,12 +85,16 @@ public class RecordingPoissonSampler extends SamplerBase implements DiscreteSamp
             // Do not record this as it is constant and could be precomputed
             final double logLambdaFactorial = factorialLog((int) lambda);
 
-            final long y2 = lambdaFractional < Double.MIN_VALUE ? 0 : nextPoisson(lambdaFractional);
-            final double delta = Math.sqrt(lambda * Math.log(32 * lambda / Math.PI + 1));
+            final long y2 = lambdaFractional < Double.MIN_VALUE ? 0
+                    : nextPoisson(lambdaFractional);
+            final double delta = Math
+                    .sqrt(lambda * Math.log(32 * lambda / Math.PI + 1));
             final double halfDelta = delta / 2;
             final double twolpd = 2 * lambda + delta;
-            final double a1 = Math.sqrt(Math.PI * twolpd) * Math.exp(1 / (8 * lambda));
-            final double a2 = (twolpd / delta) * Math.exp(-delta * (1 + delta) / twolpd);
+            final double a1 = Math.sqrt(Math.PI * twolpd)
+                    * Math.exp(1 / (8 * lambda));
+            final double a2 = (twolpd / delta)
+                    * Math.exp(-delta * (1 + delta) / twolpd);
             final double aSum = a1 + a2 + 1;
             final double p1 = a1 / aSum;
             final double p2 = a2 / aSum;
@@ -106,21 +112,18 @@ public class RecordingPoissonSampler extends SamplerBase implements DiscreteSamp
                 if (u <= p1) {
                     final double n = gaussian.sample();
                     x = n * Math.sqrt(lambda + halfDelta) - 0.5d;
-                    if (x > delta || x < -lambda) {
+                    if (x > delta || x < -lambda)
                         continue;
-                    }
                     y = x < 0 ? Math.floor(x) : Math.ceil(x);
                     final double e = exponential.sample();
                     v = -e - 0.5 * n * n + c1;
+                } else if (u > p1 + p2) {
+                    y = lambda;
+                    break;
                 } else {
-                    if (u > p1 + p2) {
-                        y = lambda;
-                        break;
-                    } else {
-                        x = delta + (twolpd / delta) * exponential.sample();
-                        y = Math.ceil(x);
-                        v = -exponential.sample() - delta * (x + 1) / twolpd;
-                    }
+                    x = delta + (twolpd / delta) * exponential.sample();
+                    y = Math.ceil(x);
+                    v = -exponential.sample() - delta * (x + 1) / twolpd;
                 }
                 a = x < 0 ? 1 : 0;
                 t = y * (y + 1) / (2 * lambda);
@@ -134,10 +137,10 @@ public class RecordingPoissonSampler extends SamplerBase implements DiscreteSamp
                     y = lambda + y;
                     break;
                 }
-                if (v > qr) {
+                if (v > qr)
                     continue;
-                }
-                if (v < y * logLambda - recordFactorialLog((int) (y + lambda)) + logLambdaFactorial) {
+                if (v < y * logLambda - recordFactorialLog((int) (y + lambda))
+                        + logLambdaFactorial) {
                     y = lambda + y;
                     break;
                 }
