@@ -106,7 +106,7 @@ public class PoissonSamplerCache {
 
         // Convert the mean into an integer.
         final int n = (int) Math.floor(mean);
-        if (n > maxN)
+        if (n > maxN || n < minN)
             // Outside the range of the cache.
             return new LargeMeanPoissonSampler(rng, mean);
 
