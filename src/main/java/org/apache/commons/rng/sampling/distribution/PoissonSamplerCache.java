@@ -113,14 +113,25 @@ public class PoissonSamplerCache {
         // Look in the cache for a state that can be reused.
         // Note: The cache is offset by minN.
         final int index = n - minN;
+        // From the java.util.concurrent.atomic Javadoc:
+        // get has the memory effects of reading a volatile variable.
         LargeMeanPoissonSamplerState state = values.get(index);
         if (state == null) {
             // Compute and store for reuse
             state = LargeMeanPoissonSamplerState.create(n);
-            // Only set this once as it will be the same.
-            // Allows concurrent threads to compute the state without
-            // excess synchronisation once the state is stored.
-            values.compareAndSet(index, null, state);
+            // Set this but do not worry about strict ordering
+            // as would be imposed for .set(int, Object) since any later
+            // objects that may be written by other threads will be the same.
+            // Allows concurrent threads to set the state without
+            // excess synchronisation over the exact object that is stored.
+            //
+            // From the java.util.concurrent.atomic Javadoc:
+            // lazySet has the memory effects of writing (assigning) a volatile
+            // variable except that it permits reorderings with subsequent (but
+            // not previous) memory actions that do not themselves impose
+            // reordering constraints with ordinary non-volatile writes.
+            values.lazySet(index, state);
+            //values.compareAndSet(index, null, state);
         }
         // Compute the remaining fraction of the mean
         final double lambdaFractional = mean - n;
