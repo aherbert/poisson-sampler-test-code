@@ -38,8 +38,8 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Executes benchmark to compare the speed of generation of random numbers from
- * the various source providers.
+ * Executes benchmark to compare the speed of generation of Poisson random
+ * numbers from the various source providers.
  * <p>
  * This is adapted from
  * {@code org.apache.commons.rng.sampling.distribution.SamplersPerformance} in
