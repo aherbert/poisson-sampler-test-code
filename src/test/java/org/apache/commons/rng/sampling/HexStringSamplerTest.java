@@ -41,7 +41,7 @@ public class HexStringSamplerTest {
             for (int i = 0; i < 10; i++) {
                 final String hex = s.sample();
                 Assert.assertNotNull(hex);
-                //System.out.println(hex);
+                // System.out.println(hex);
                 Assert.assertEquals(length, hex.length());
                 for (int j = 0; j < length; j++) {
                     final int c = hex.charAt(j);
@@ -69,10 +69,10 @@ public class HexStringSamplerTest {
             }
         }
     }
-    
+
     /**
-     * Adapted from RandomDataGenerator to match the implementation of the HexStringSampler.
-     * Original code is left commented out.
+     * Adapted from RandomDataGenerator to match the implementation of the
+     * HexStringSampler. Original code is left commented out.
      *
      * @param ran a random number generator
      * @param len the desired string length.
@@ -85,21 +85,21 @@ public class HexStringSamplerTest {
         StringBuilder outBuffer = new StringBuilder();
 
         // Get int(len/2)+1 random bytes
-        //byte[] randomBytes = new byte[(len/2) + 1]; // ORIGINAL
-        byte[] randomBytes = new byte[(len+1) / 2];
+        // byte[] randomBytes = new byte[(len/2) + 1]; // ORIGINAL
+        byte[] randomBytes = new byte[(len + 1) / 2];
         ran.nextBytes(randomBytes);
 
         // Convert each byte to 2 hex digits
         for (int i = 0; i < randomBytes.length; i++) {
 
             /*
-             * Add 128 to byte value to make interval 0-255 before doing hex
-             * conversion. This guarantees <= 2 hex digits from toHexString()
-             * toHexString would otherwise add 2^32 to negative arguments.
+             * Add 128 to byte value to make interval 0-255 before doing hex conversion.
+             * This guarantees <= 2 hex digits from toHexString() toHexString would
+             * otherwise add 2^32 to negative arguments.
              */
             // ORIGINAL
-            //Integer c = Integer.valueOf(randomBytes[i]);
-            //String hex = Integer.toHexString(c.intValue() + 128);
+            // Integer c = Integer.valueOf(randomBytes[i]);
+            // String hex = Integer.toHexString(c.intValue() + 128);
 
             String hex = Integer.toHexString(randomBytes[i] & 0xff);
 
@@ -143,4 +143,6 @@ public class HexStringSamplerTest {
             System.out.printf("%2d = %d  (%.2f)\n", i, h[i], h[i] / mean);
         }
     }
+
+    // TODO - Test the static method returns the same strings
 }

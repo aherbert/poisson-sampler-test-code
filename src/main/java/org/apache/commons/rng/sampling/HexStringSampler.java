@@ -21,8 +21,10 @@ public class HexStringSampler {
      *
      * @param rng    Generator of uniformly distributed random numbers.
      * @param length The length.
+     * @throws IllegalArgumentException If {@code length <= 0}
      */
-    public HexStringSampler(UniformRandomProvider rng, int length) {
+    public HexStringSampler(UniformRandomProvider rng, int length) 
+            throws IllegalArgumentException {
         this.rng = rng;
         this.bytes = createByteBuffer(length);
         this.length = length;
@@ -33,8 +35,10 @@ public class HexStringSampler {
      *
      * @param length The length.
      * @return The byte buffer.
+     * @throws IllegalArgumentException If {@code length <= 0}
      */
-    private static byte[] createByteBuffer(int length) {
+    private static byte[] createByteBuffer(int length) 
+            throws IllegalArgumentException {
         if (length <= 0)
             throw new IllegalArgumentException(length + " <= 0");
         // The random sample of bytes creates 2 hex 
@@ -59,8 +63,10 @@ public class HexStringSampler {
      * @param rng    Generator of uniformly distributed random numbers.
      * @param length The length.
      * @return A random hex string.
+     * @throws IllegalArgumentException If {@code length <= 0}
      */
-    public static String nextHexString(UniformRandomProvider rng, int length) {
+    public static String nextHexString(UniformRandomProvider rng, int length) 
+            throws IllegalArgumentException {
         return nextHexString(rng, createByteBuffer(length), length);
     }
 
